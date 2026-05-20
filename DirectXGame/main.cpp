@@ -57,7 +57,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	ID3DBlob* vsBlob = nullptr;
 	ID3DBlob* psBlob = nullptr;
 
-	std::wstring vsFile = L"Resources/shaders/testVs.hlsl";
+	std::wstring vsFile = L"Resources/shaders/testVS.hlsl";
 	hr = D3DCompileFromFile(vsFile.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &vsBlob, &errorBlob);
 	if (FAILED(hr))
 	{
@@ -143,7 +143,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		commondList->SetPipelineState(graphicsPipeLineState);
 		commondList->IASetVertexBuffers(0, 1, &vertexBufferView);
 
-		commondList->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		commondList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		commondList->DrawInstanced(3, 1, 0, 0);
 
