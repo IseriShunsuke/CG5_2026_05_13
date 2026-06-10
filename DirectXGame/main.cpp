@@ -1,6 +1,7 @@
-#include <Windows.h>
+#include "Shader.h"
 #include "kamataEngine.h"
-#include <d3dcompiler.h>
+#include <Windows.h>
+#include <cassert>
 
 using namespace KamataEngine;
 
@@ -19,15 +20,13 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	ID3D12GraphicsCommandList* commondList = dxcommon->GetCommandList();
 
-
 	D3D12_ROOT_SIGNATURE_DESC descriptorRootSignature{};
 	descriptorRootSignature.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 	ID3DBlob* signatureBlob = nullptr;
 	ID3DBlob* errorBlob = nullptr;
 
 	HRESULT hr = D3D12SerializeRootSignature(&descriptorRootSignature, D3D_ROOT_SIGNATURE_VERSION_1, &signatureBlob, &errorBlob);
-	if (FAILED(hr))
-	{
+	if (FAILED(hr)) {
 		DebugText::GetInstance()->ConsolePrintf(reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
 		assert(false);
 	}
@@ -56,16 +55,18 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
 	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
-	ID3DBlob* vsBlob = CompileShader(L"Resources/shaders/testVS.hlsl", "vs_5_0");
-	assert(vsBlob != nullptr);
-	ID3DBlob* psBlob = CompileShader(L"Resources/shaders/testPS.hlsl", "ps_5_0");
-	assert(psBlob != nullptr);
+	Shader vs;
+	vs.Load(L"Resources/shaders/testVS.hlsl", "vs_5_0");
+	assert(vs.GetBlob() != nullptr);
+	Shader ps;
+	ps.Load(L"Resources/shaders/testPS.hlsl", "ps_5_0");
+	assert(ps.GetBlob() != nullptr);
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipeLineStateDesc{};
 	graphicsPipeLineStateDesc.pRootSignature = rootSignature;
 	graphicsPipeLineStateDesc.InputLayout = inputLayoutDesc;
-	graphicsPipeLineStateDesc.VS = {vsBlob->GetBufferPointer(), vsBlob->GetBufferSize()};
-	graphicsPipeLineStateDesc.PS = {psBlob->GetBufferPointer(), psBlob->GetBufferSize()};
+	graphicsPipeLineStateDesc.VS = {vs.GetBlob()->GetBufferPointer(), vs.GetBlob()->GetBufferSize()};
+	graphicsPipeLineStateDesc.PS = {ps.GetBlob()->GetBufferPointer(), ps.GetBlob()->GetBufferSize()};
 	graphicsPipeLineStateDesc.BlendState = blendDesc;
 	graphicsPipeLineStateDesc.RasterizerState = rasterizerDesc;
 
@@ -81,7 +82,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	hr = dxcommon->GetDevice()->CreateGraphicsPipelineState(&graphicsPipeLineStateDesc, IID_PPV_ARGS(&graphicsPipeLineState));
 	assert(SUCCEEDED(hr));
 
-	
 	D3D12_HEAP_PROPERTIES uploadHeapProiperties{};
 	uploadHeapProiperties.Type = D3D12_HEAP_TYPE_UPLOAD;
 
@@ -114,8 +114,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	vertexResource->Unmap(0, nullptr);
 
 	while (true) {
-		if (KamataEngine::Update())
-		{
+		if (KamataEngine::Update()) {
 			break;
 		}
 
@@ -136,28 +135,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	graphicsPipeLineState->Release();
 	signatureBlob->Release();
 	rootSignature->Release();
-	vsBlob->Release();
-	psBlob->Release();
 
 	KamataEngine::Finalize();
-	
+
 	return 0;
-}
-
-ID3DBlob* CompileShader(const std::wstring& filePath, const std::string& shaderModel) 
-{ 
-	ID3DBlob* shaderblob = nullptr; 
-	ID3DBlob* errorblob = nullptr;
-
-	HRESULT hr =
-	    D3DCompileFromFile(filePath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", shaderModel.c_str(), D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &shaderblob, &errorblob);
-	if (FAILED(hr)) {
-		DebugText::GetInstance()->ConsolePrintf(std::system_category().message(hr).c_str());
-		if (errorblob) {
-			DebugText::GetInstance()->ConsolePrintf(reinterpret_cast<char*>(errorblob->GetBufferPointer()));
-		}
-		assert(false);
-	}
-
-	return shaderblob;
 }
