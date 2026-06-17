@@ -32,6 +32,15 @@ void SetupPipelineState(PipelineState& pipelineState, RootSignature& rs, Shader&
 	rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
 	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
+
+	Shader vs;
+	vs.LoadDxc(L"Resources/shaders/TestVS.hlsl", L"vs_6_0");
+	assert(vs.GetDxcBlob() != nullptr);
+	Shader ps;
+	ps.LoadDxc(L"Resources/shaders/TestPS.hlsl", L"ps_6_0");
+	assert(ps.GetDxcBlob() != nullptr);
+
+
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipeLineStateDesc{};
 	graphicsPipeLineStateDesc.pRootSignature = rs.Get();
 	graphicsPipeLineStateDesc.InputLayout = inputLayoutDesc;
