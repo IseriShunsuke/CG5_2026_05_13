@@ -60,7 +60,7 @@ void Shader::LoadDxc(const std::wstring& filePath, const std::wstring& shaderMod
 	shaderSourceBuffer.Encoding = DXC_CP_UTF8;
 
 	LPCWSTR arguments[] = {
-	    filePath.c_str(), L"-E", L"main", L"-T", shaderModel.c_str(), L"-Zi", L"Qembed_debug", L"-Od", L"-Zpr",
+	    filePath.c_str(), L"-E", L"main", L"-T", shaderModel.c_str(), L"-Zi", L"-Qembed_debug", L"-Od", L"-Zpr",
 	};
 
 	IDxcResult* shaderResult = nullptr;
