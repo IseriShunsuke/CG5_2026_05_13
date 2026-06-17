@@ -1,5 +1,7 @@
 #include "Shader.h"
 #include "kamataEngine.h"
+#include "RootSignature.h"
+#include "PipelineState.h"
 #include <Windows.h>
 #include <cassert>
 
@@ -7,35 +9,10 @@ using namespace KamataEngine;
 
 ID3DBlob* CompileShader(const std::wstring& filePath, const std::string& shaderModel);
 
-// Windowsアプリでのエントリーポイント(main関数)
-int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
+void SetupPipelineState(PipelineState& pipelineState, RootSignature& rs, Shader& vs, Shader& ps);
 
-	KamataEngine::Initialize(L"LE3D_03_イセリ_シュンスケ");
-
-	DirectXCommon* dxcommon = DirectXCommon::GetInstance();
-
-	int w = dxcommon->GetBackBufferWidth();
-	int h = dxcommon->GetBackBufferHeight();
-	DebugText::GetInstance()->ConsolePrintf(std::format("with : {},height : {}\n", w, h).c_str());
-
-	ID3D12GraphicsCommandList* commondList = dxcommon->GetCommandList();
-
-	D3D12_ROOT_SIGNATURE_DESC descriptorRootSignature{};
-	descriptorRootSignature.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-	ID3DBlob* signatureBlob = nullptr;
-	ID3DBlob* errorBlob = nullptr;
-
-	HRESULT hr = D3D12SerializeRootSignature(&descriptorRootSignature, D3D_ROOT_SIGNATURE_VERSION_1, &signatureBlob, &errorBlob);
-	if (FAILED(hr)) {
-		DebugText::GetInstance()->ConsolePrintf(reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
-		assert(false);
-	}
-
-	ID3D12RootSignature* rootSignature = nullptr;
-
-	hr = dxcommon->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature));
-	assert(SUCCEEDED(hr));
-
+void SetupPipelineState(PipelineState& pipelineState, RootSignature& rs, Shader& vs, Shader& ps)
+{
 	D3D12_INPUT_ELEMENT_DESC inputElementDesc[1] = {};
 	inputElementDesc[0].SemanticName = "POSITION";
 	inputElementDesc[0].SemanticIndex = 0;
@@ -55,6 +32,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
 	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
+
 	Shader vs;
 	vs.LoadDxc(L"Resources/shaders/TestVS.hlsl", L"vs_6_0");
 	assert(vs.GetDxcBlob() != nullptr);
@@ -62,8 +40,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	ps.LoadDxc(L"Resources/shaders/TestPS.hlsl", L"ps_6_0");
 	assert(ps.GetDxcBlob() != nullptr);
 
+
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipeLineStateDesc{};
-	graphicsPipeLineStateDesc.pRootSignature = rootSignature;
+	graphicsPipeLineStateDesc.pRootSignature = rs.Get();
 	graphicsPipeLineStateDesc.InputLayout = inputLayoutDesc;
 	graphicsPipeLineStateDesc.VS = {vs.GetDxcBlob()->GetBufferPointer(), vs.GetDxcBlob()->GetBufferSize()};
 	graphicsPipeLineStateDesc.PS = {ps.GetDxcBlob()->GetBufferPointer(), ps.GetDxcBlob()->GetBufferSize()};
@@ -78,9 +57,38 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	graphicsPipeLineStateDesc.SampleDesc.Count = 1;
 	graphicsPipeLineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
-	ID3D12PipelineState* graphicsPipeLineState = nullptr;
-	hr = dxcommon->GetDevice()->CreateGraphicsPipelineState(&graphicsPipeLineStateDesc, IID_PPV_ARGS(&graphicsPipeLineState));
-	assert(SUCCEEDED(hr));
+	pipelineState.Create(graphicsPipeLineStateDesc);
+}
+
+// Windowsアプリでのエントリーポイント(main関数)
+int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
+
+	KamataEngine::Initialize(L"LE3D_03_イセリ_シュンスケ");
+
+	DirectXCommon* dxcommon = DirectXCommon::GetInstance();
+
+	int w = dxcommon->GetBackBufferWidth();
+	int h = dxcommon->GetBackBufferHeight();
+	DebugText::GetInstance()->ConsolePrintf(std::format("with : {},height : {}\n", w, h).c_str());
+
+	ID3D12GraphicsCommandList* commondList = dxcommon->GetCommandList();
+
+	RootSignature rs;
+	rs.Create();
+
+
+
+	Shader vs;
+	vs.LoadDxc(L"Resources/shaders/testVS.hlsl", L"vs_6_0");
+	assert(vs.GetDxcBlob() != nullptr);
+	Shader ps;
+	ps.LoadDxc(L"Resources/shaders/testPS.hlsl", L"ps_6_0");
+	assert(ps.GetDxcBlob() != nullptr);
+
+	
+
+	PipelineState pipelinaState;
+	SetupPipelineState(pipelinaState, rs, vs, ps);
 
 	D3D12_HEAP_PROPERTIES uploadHeapProiperties{};
 	uploadHeapProiperties.Type = D3D12_HEAP_TYPE_UPLOAD;
@@ -97,7 +105,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
 	ID3D12Resource* vertexResource{};
-	hr = dxcommon->GetDevice()->CreateCommittedResource(&uploadHeapProiperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&vertexResource));
+	HRESULT hr = dxcommon->GetDevice()->CreateCommittedResource(&uploadHeapProiperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&vertexResource));
 	assert(SUCCEEDED(hr));
 
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
@@ -120,8 +128,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 		dxcommon->PreDraw();
 
-		commondList->SetGraphicsRootSignature(rootSignature);
-		commondList->SetPipelineState(graphicsPipeLineState);
+		commondList->SetGraphicsRootSignature(rs.Get());
+		commondList->SetPipelineState(pipelinaState.Get());
 		commondList->IASetVertexBuffers(0, 1, &vertexBufferView);
 
 		commondList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -131,10 +139,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		dxcommon->PostDraw();
 	}
 
-	vertexResource->Release();
-	graphicsPipeLineState->Release();
-	signatureBlob->Release();
-	rootSignature->Release();
+	vertexResource->Release();;
 
 	KamataEngine::Finalize();
 
