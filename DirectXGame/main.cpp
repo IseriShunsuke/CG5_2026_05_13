@@ -2,6 +2,7 @@
 #include "kamataEngine.h"
 #include "RootSignature.h"
 #include "PipelineState.h"
+#include "VertexBuffer.h"
 #include <Windows.h>
 #include <cassert>
 
@@ -70,10 +71,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 
 	Shader vs;
-	vs.LoadDxc(L"Resources/shaders/testVS.hlsl", L"vs_6_0");
+	vs.LoadDxc(L"Resources/shaders/TestVS.hlsl", L"vs_6_0");
 	assert(vs.GetDxcBlob() != nullptr);
 	Shader ps;
-	ps.LoadDxc(L"Resources/shaders/testPS.hlsl", L"ps_6_0");
+	ps.LoadDxc(L"Resources/shaders/TestPS.hlsl", L"ps_6_0");
 	assert(ps.GetDxcBlob() != nullptr);
 
 	
@@ -81,36 +82,16 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	PipelineState pipelinaState;
 	SetupPipelineState(pipelinaState, rs, vs, ps);
 
-	D3D12_HEAP_PROPERTIES uploadHeapProiperties{};
-	uploadHeapProiperties.Type = D3D12_HEAP_TYPE_UPLOAD;
-
-	D3D12_RESOURCE_DESC vertexResourceDesc{};
-	vertexResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	vertexResourceDesc.Width = sizeof(Vector4) * 3;
-
-	vertexResourceDesc.Height = 1;
-	vertexResourceDesc.DepthOrArraySize = 1;
-	vertexResourceDesc.MipLevels = 1;
-	vertexResourceDesc.SampleDesc.Count = 1;
-
-	vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-
-	ID3D12Resource* vertexResource{};
-	HRESULT hr = dxcommon->GetDevice()->CreateCommittedResource(&uploadHeapProiperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&vertexResource));
-	assert(SUCCEEDED(hr));
-
-	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
-	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
-	vertexBufferView.SizeInBytes = sizeof(Vector4) * 3;
-	vertexBufferView.StrideInBytes = sizeof(Vector4);
+	VertexBuffer vb;
+	vb.Create(sizeof(Vector4) * 3, sizeof(Vector4));
 
 	Vector4* vertexData = nullptr;
-	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+	vb.Get()->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
 	vertexData[0] = {-0.5f, -0.5f, 0.0f, 1.0f};
 	vertexData[1] = {0.0f, 0.5f, 0.0f, 1.0f};
 	vertexData[2] = {0.5f, -0.5f, 0.0f, 1.0f};
 
-	vertexResource->Unmap(0, nullptr);
+	/*vb.Get()->Unmap(0, nullptr);*/
 
 	while (true) {
 		if (KamataEngine::Update()) {
@@ -121,7 +102,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 		commondList->SetGraphicsRootSignature(rs.Get());
 		commondList->SetPipelineState(pipelinaState.Get());
-		commondList->IASetVertexBuffers(0, 1, &vertexBufferView);
+		commondList->IASetVertexBuffers(0, 1, vb.GetView());
 
 		commondList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -129,8 +110,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 		dxcommon->PostDraw();
 	}
-
-	vertexResource->Release();;
 
 	KamataEngine::Finalize();
 
