@@ -22,9 +22,8 @@ void VertexBuffer::Create(const UINT size, const UINT stride) {
 
 	vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-	ID3D12Resource* vertexResource{};
-	HRESULT hr =
-	    dxCommon->GetDevice()->CreateCommittedResource(&uploadHeapProiperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&vertexResource));
+	ID3D12Resource* vertexResource;
+	hr = dxCommon->GetDevice()->CreateCommittedResource(&uploadHeapProiperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&vertexResource));
 	assert(SUCCEEDED(hr));
 	
 	vertexBuffer_ = vertexResource;

@@ -15,4 +15,5 @@ public:
 private:
 	ID3D12Resource* vertexBuffer_;
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
+	HRESULT hr;
 };
