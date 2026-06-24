@@ -12,4 +12,5 @@ public:
 
 private:
 	ID3D12RootSignature* rootSignature_ = nullptr;
+	HRESULT hr;
 };

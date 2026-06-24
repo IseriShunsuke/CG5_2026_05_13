@@ -13,4 +13,5 @@ public:
 
 private:
 	ID3D12PipelineState* pipelineState_ = nullptr;
+	HRESULT hr;
 };

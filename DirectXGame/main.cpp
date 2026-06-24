@@ -3,6 +3,7 @@
 #include "RootSignature.h"
 #include "PipelineState.h"
 #include "VertexBuffer.h"
+#include "IndexBuffer.h"
 #include <Windows.h>
 #include <cassert>
 
@@ -34,10 +35,10 @@ void SetupPipelineState(PipelineState& pipelineState, RootSignature& rs, Shader&
 	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
 
-	Shader vs;
+	
 	vs.LoadDxc(L"Resources/shaders/TestVS.hlsl", L"vs_6_0");
 	assert(vs.GetDxcBlob() != nullptr);
-	Shader ps;
+	
 	ps.LoadDxc(L"Resources/shaders/TestPS.hlsl", L"ps_6_0");
 	assert(ps.GetDxcBlob() != nullptr);
 
@@ -80,25 +81,44 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 
 	Shader vs;
-	vs.LoadDxc(L"Resources/shaders/TestVS.hlsl", L"vs_6_0");
-	assert(vs.GetDxcBlob() != nullptr);
 	Shader ps;
-	ps.LoadDxc(L"Resources/shaders/TestPS.hlsl", L"ps_6_0");
-	assert(ps.GetDxcBlob() != nullptr);
-
 	
 
 	PipelineState pipelinaState;
 	SetupPipelineState(pipelinaState, rs, vs, ps);
 
-	VertexBuffer vb;
-	vb.Create(sizeof(Vector4) * 3, sizeof(Vector4));
+	struct VertexData
+	{
+		Vector4 position;
+	};
 
-	Vector4* vertexData = nullptr;
-	vb.Get()->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
-	vertexData[0] = {-0.5f, -0.5f, 0.0f, 1.0f};
-	vertexData[1] = {0.0f, 0.5f, 0.0f, 1.0f};
-	vertexData[2] = {0.5f, -0.5f, 0.0f, 1.0f};
+	VertexData vertices[] = {
+	    {0.0f, 0.5f, 0.0f, 1.0f},
+	    {0.5f,  -0.5f,  0.0f, 1.0f},
+	    {-0.5f,  -0.5f, 0.0f, 1.0f},
+	};
+
+	VertexBuffer vb;
+	vb.Create(sizeof(vertices), sizeof(vertices[0]));
+
+	VertexData* pGpuVertices = nullptr;
+	vb.Get()->Map(0, nullptr, reinterpret_cast<void**>(&pGpuVertices));
+	for (int i = 0; i < _countof(vertices); ++i)
+	{
+		pGpuVertices[i] = vertices[i];
+	}
+
+	uint16_t indices[] = {0, 1, 2,};
+	
+	IndexBuffer ib;
+	ib.Create(sizeof(indices), sizeof(indices[0]));
+
+	uint16_t* pGpuIndices = nullptr;
+	ib.Get()->Map(0, nullptr, reinterpret_cast<void**>(&pGpuIndices));
+	for (int i = 0; i < _countof(indices); ++i) {
+		pGpuIndices[i] = indices[i];
+	}
+
 
 	/*vb.Get()->Unmap(0, nullptr);*/
 
@@ -112,10 +132,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		commondList->SetGraphicsRootSignature(rs.Get());
 		commondList->SetPipelineState(pipelinaState.Get());
 		commondList->IASetVertexBuffers(0, 1, vb.GetView());
+		commondList->IASetIndexBuffer(ib.GetView());
 
 		commondList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		commondList->DrawInstanced(3, 1, 0, 0);
+		/*commondList->DrawInstanced(3, 1, 0, 0);*/
+		commondList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);
 
 		dxcommon->PostDraw();
 	}
