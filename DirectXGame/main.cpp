@@ -93,9 +93,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	};
 
 	VertexData vertices[] = {
-	    {0.0f, 0.5f, 0.0f, 1.0f},
-	    {0.5f,  -0.5f,  0.0f, 1.0f},
-	    {-0.5f,  -0.5f, 0.0f, 1.0f},
+	    {1.0f, 1.0f, 0.0f, 1.0f},
+	    {1.0f,  -1.0f,  0.0f, 1.0f},
+	    {-1.0f,  -1.0f, 0.0f, 1.0f},
+	    {-1.0f, 1.0f, 0.0f, 1.0f},
 	};
 
 	VertexBuffer vb;
@@ -108,7 +109,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		pGpuVertices[i] = vertices[i];
 	}
 
-	uint16_t indices[] = {0, 1, 2,};
+	uint16_t indices[] = {0, 1, 2, 0 ,2 ,3};
 	
 	IndexBuffer ib;
 	ib.Create(sizeof(indices), sizeof(indices[0]));
