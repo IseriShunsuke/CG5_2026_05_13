@@ -1,9 +1,9 @@
-#include "Shader.h"
-#include "kamataEngine.h"
-#include "RootSignature.h"
-#include "PipelineState.h"
-#include "VertexBuffer.h"
 #include "IndexBuffer.h"
+#include "PipelineState.h"
+#include "RootSignature.h"
+#include "Shader.h"
+#include "VertexBuffer.h"
+#include "kamataEngine.h"
 #include <Windows.h>
 #include <cassert>
 
@@ -13,13 +13,16 @@ ID3DBlob* CompileShader(const std::wstring& filePath, const std::string& shaderM
 
 void SetupPipelineState(PipelineState& pipelineState, RootSignature& rs, Shader& vs, Shader& ps);
 
-void SetupPipelineState(PipelineState& pipelineState, RootSignature& rs, Shader& vs, Shader& ps)
-{
-	D3D12_INPUT_ELEMENT_DESC inputElementDesc[1] = {};
+void SetupPipelineState(PipelineState& pipelineState, RootSignature& rs, Shader& vs, Shader& ps) {
+	D3D12_INPUT_ELEMENT_DESC inputElementDesc[2] = {};
 	inputElementDesc[0].SemanticName = "POSITION";
 	inputElementDesc[0].SemanticIndex = 0;
 	inputElementDesc[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	inputElementDesc[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	inputElementDesc[1].SemanticName = "TEXCOORD";
+	inputElementDesc[1].SemanticIndex = 0;
+	inputElementDesc[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+	inputElementDesc[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
 
 	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
 	inputLayoutDesc.pInputElementDescs = inputElementDesc;
@@ -34,14 +37,11 @@ void SetupPipelineState(PipelineState& pipelineState, RootSignature& rs, Shader&
 	rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
 	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
-
-	
 	vs.LoadDxc(L"Resources/shaders/TestVS.hlsl", L"vs_6_0");
 	assert(vs.GetDxcBlob() != nullptr);
-	
+
 	ps.LoadDxc(L"Resources/shaders/TestPS.hlsl", L"ps_6_0");
 	assert(ps.GetDxcBlob() != nullptr);
-
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipeLineStateDesc{};
 	graphicsPipeLineStateDesc.pRootSignature = rs.Get();
@@ -78,25 +78,22 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	RootSignature rs;
 	rs.Create();
 
-
-
 	Shader vs;
 	Shader ps;
-	
 
 	PipelineState pipelinaState;
 	SetupPipelineState(pipelinaState, rs, vs, ps);
 
-	struct VertexData
-	{
+	struct VertexData {
 		Vector4 position;
+		Vector2 texcoord;
 	};
 
 	VertexData vertices[] = {
-	    {1.0f, 1.0f, 0.0f, 1.0f},
-	    {1.0f,  -1.0f,  0.0f, 1.0f},
-	    {-1.0f,  -1.0f, 0.0f, 1.0f},
-	    {-1.0f, 1.0f, 0.0f, 1.0f},
+	    {{1.0f, 1.0f, 0.0f, 1.0f}, {1.0f, 0.0f}}, 
+		{{1.0f, -1.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+	    {{-1.0f, -1.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+	    {{-1.0f, 1.0f, 0.0f, 1.0f},  {0.0f, 0.0f}},
 	};
 
 	VertexBuffer vb;
@@ -104,13 +101,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	VertexData* pGpuVertices = nullptr;
 	vb.Get()->Map(0, nullptr, reinterpret_cast<void**>(&pGpuVertices));
-	for (int i = 0; i < _countof(vertices); ++i)
-	{
+	for (int i = 0; i < _countof(vertices); ++i) {
 		pGpuVertices[i] = vertices[i];
 	}
 
-	uint16_t indices[] = {0, 1, 2, 0 ,2 ,3};
-	
+	uint16_t indices[] = {0, 1, 2, 0, 2, 3};
+
 	IndexBuffer ib;
 	ib.Create(sizeof(indices), sizeof(indices[0]));
 
@@ -119,7 +115,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	for (int i = 0; i < _countof(indices); ++i) {
 		pGpuIndices[i] = indices[i];
 	}
-
 
 	/*vb.Get()->Unmap(0, nullptr);*/
 
