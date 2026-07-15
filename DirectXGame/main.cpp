@@ -4,6 +4,7 @@
 #include "Shader.h"
 #include "VertexBuffer.h"
 #include "kamataEngine.h"
+#include "worldTransformEx.h"
 #include <Windows.h>
 #include <cassert>
 
@@ -245,6 +246,17 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	device->CreateShaderResourceView(renderTextureResource, &srvDesc, srvHandleCPU);
 
 
+	Model* model = Model::CreateFromOBJ("terrain");
+
+	worldTransformEx worldTransform;
+	worldTransform.Initialize();
+	worldTransform.scale_ = Vector3(1.0f, 1.0f, 1.0f);
+
+	Camera camera;
+	camera.Initialize();
+	camera.translation_ = Vector3(0.0f, 1.0f, 0.0f);
+
+
 
 	/*vb.Get()->Unmap(0, nullptr);*/
 
@@ -252,7 +264,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		if (KamataEngine::Update()) {
 			break;
 		}
+		worldTransform.rotation_.y += 0.005f;
+		worldTransform.UpdateMatrix();
 
+		camera.UpdateMatrix();
 
 		D3D12_RESOURCE_BARRIER barrier{};
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -305,6 +320,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		/*commondList->DrawInstanced(3, 1, 0, 0);*/
 		commondList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);
 
+		Model::PreDraw();
+		model->Draw(worldTransform, camera);
+		Model::PostDraw();
+
 
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -316,6 +335,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 		dxcommon->PostDraw();
 	}
+
+	delete model;
 
 	renderTextureResource->Release();
 	srvDescriptorHeap->Release();
