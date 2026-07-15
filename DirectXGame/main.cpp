@@ -301,6 +301,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 		commondList->ClearDepthStencilView(dsvHandleCPU, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
+		Model::PreDraw();
+		model->Draw(worldTransform, camera);
+		Model::PostDraw();
 
 		dxcommon->PreDraw();
 
@@ -320,9 +323,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		/*commondList->DrawInstanced(3, 1, 0, 0);*/
 		commondList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);
 
-		Model::PreDraw();
-		model->Draw(worldTransform, camera);
-		Model::PostDraw();
+		
 
 
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
